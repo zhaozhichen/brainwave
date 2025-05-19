@@ -95,7 +95,7 @@ function App() {
       recognitionRef.current && recognitionRef.current.stop();
       setIsRecording(false);
       setLoadingPunct(true);
-      setTranscript('[Restoring punctuation...]');
+      setTranscript(rawTranscriptRef.current + '\n[Restoring punctuation...]');
       const punctuated = await restorePunctuation(rawTranscriptRef.current, language);
       setTranscript(punctuated);
       setLoadingPunct(false);
