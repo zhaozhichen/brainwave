@@ -7,26 +7,15 @@ const LANGUAGES = [
 
 const gradient = 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)';
 
-async function restorePunctuation(text) {
-  const apiKey = process.env.REACT_APP_HF_API_KEY;
-  if (!apiKey) return text;
+async function restorePunctuation(text, language) {
   try {
-    const response = await fetch(
-      'https://api-inference.huggingface.co/models/oliverguhr/fullstop-punctuation-multilang-large',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ inputs: text }),
-      }
-    );
+    const response = await fetch('/api/punctuate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, language }),
+    });
     const data = await response.json();
-    if (Array.isArray(data) && data[0]?.generated_text) {
-      return data[0].generated_text;
-    }
-    return text;
+    return data.result || text;
   } catch (e) {
     return text;
   }
@@ -41,6 +30,7 @@ function App() {
   const [loadingPunct, setLoadingPunct] = useState(false);
   const recognitionRef = useRef(null);
   const timerRef = useRef(null);
+  const rawTranscriptRef = useRef('');
 
   // Timer logic
   React.useEffect(() => {
@@ -62,10 +52,11 @@ function App() {
   };
 
   // Start/Stop recording
-  const handleRecord = () => {
+  const handleRecord = async () => {
     if (!isRecording) {
       setTranscript('');
       setTimer(0);
+      rawTranscriptRef.current = '';
       // Setup recognition
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -77,7 +68,7 @@ function App() {
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
-      recognition.onresult = async (event) => {
+      recognition.onresult = (event) => {
         let interim = '';
         let final = '';
         for (let i = 0; i < event.results.length; ++i) {
@@ -85,14 +76,8 @@ function App() {
           if (res.isFinal) final += res[0].transcript;
           else interim += res[0].transcript;
         }
-        if (final) {
-          setLoadingPunct(true);
-          const punctuated = await restorePunctuation(final);
-          setTranscript(punctuated + interim);
-          setLoadingPunct(false);
-        } else {
-          setTranscript(final + interim);
-        }
+        rawTranscriptRef.current = final + interim;
+        setTranscript(final + interim);
       };
       recognition.onerror = (e) => {
         setIsRecording(false);
@@ -106,8 +91,14 @@ function App() {
       recognition.start();
       setIsRecording(true);
     } else {
+      // Stop recording and restore punctuation
       recognitionRef.current && recognitionRef.current.stop();
       setIsRecording(false);
+      setLoadingPunct(true);
+      setTranscript(rawTranscriptRef.current + '\n[Restoring punctuation...]');
+      const punctuated = await restorePunctuation(rawTranscriptRef.current, language);
+      setTranscript(punctuated);
+      setLoadingPunct(false);
     }
   };
 
