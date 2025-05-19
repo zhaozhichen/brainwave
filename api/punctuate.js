@@ -6,9 +6,18 @@ export default async function handler(req, res) {
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'No API key' });
 
-  const prompt = language && language.startsWith('zh')
-    ? `请为下列中文文本加上合适的标点符号，只返回加好标点的文本，不要解释：${text}`
-    : `Add proper punctuation to this text and return only the punctuated text, nothing else:\n${text}`;
+  const messages = [
+    {
+      role: 'system',
+      content: language && language.startsWith('zh')
+        ? '你是一个标点修复助手。只返回加好标点的文本，不要解释，不要添加任何内容。'
+        : 'You are a punctuation restoration assistant. Only return the input text with proper punctuation, and nothing else.',
+    },
+    {
+      role: 'user',
+      content: text,
+    }
+  ];
 
   const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
     method: 'POST',
@@ -18,7 +27,7 @@ export default async function handler(req, res) {
     },
     body: JSON.stringify({
       model: 'deepseek-chat',
-      messages: [{ role: 'user', content: prompt }],
+      messages,
       max_tokens: 1024,
       temperature: 0.2,
     }),
