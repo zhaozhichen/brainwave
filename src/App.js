@@ -7,12 +7,38 @@ const LANGUAGES = [
 
 const gradient = 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)';
 
+async function restorePunctuation(text) {
+  const apiKey = process.env.REACT_APP_HF_API_KEY;
+  if (!apiKey) return text;
+  try {
+    const response = await fetch(
+      'https://api-inference.huggingface.co/models/oliverguhr/fullstop-punctuation-multilang-large',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ inputs: text }),
+      }
+    );
+    const data = await response.json();
+    if (Array.isArray(data) && data[0]?.generated_text) {
+      return data[0].generated_text;
+    }
+    return text;
+  } catch (e) {
+    return text;
+  }
+}
+
 function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [output, setOutput] = useState('');
   const [language, setLanguage] = useState(LANGUAGES[0].code);
   const [timer, setTimer] = useState(0);
+  const [loadingPunct, setLoadingPunct] = useState(false);
   const recognitionRef = useRef(null);
   const timerRef = useRef(null);
 
@@ -51,7 +77,7 @@ function App() {
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
-      recognition.onresult = (event) => {
+      recognition.onresult = async (event) => {
         let interim = '';
         let final = '';
         for (let i = 0; i < event.results.length; ++i) {
@@ -59,7 +85,14 @@ function App() {
           if (res.isFinal) final += res[0].transcript;
           else interim += res[0].transcript;
         }
-        setTranscript(final + interim);
+        if (final) {
+          setLoadingPunct(true);
+          const punctuated = await restorePunctuation(final);
+          setTranscript(punctuated + interim);
+          setLoadingPunct(false);
+        } else {
+          setTranscript(final + interim);
+        }
       };
       recognition.onerror = (e) => {
         setIsRecording(false);
@@ -168,7 +201,7 @@ function App() {
           position: 'relative',
         }}>
           <textarea
-            value={transcript}
+            value={loadingPunct ? transcript + '\n[Restoring punctuation...]' : transcript}
             readOnly
             rows={4}
             style={{
