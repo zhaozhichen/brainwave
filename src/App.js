@@ -121,6 +121,19 @@ function App() {
     setOutput(`${type} evaluation coming soon!`);
   };
 
+  // Ask AI
+  const handleAskAI = async () => {
+    if (!transcript.trim()) {
+      setOutput("Please enter some text before asking AI.");
+      return;
+    }
+    setOutput('Asking AI...');
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const aiResponse = "This is a response from Ask AI.";
+    setOutput(aiResponse);
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -253,7 +266,7 @@ function App() {
             }}
           >Correctness</button>
           <button
-            onClick={() => handleEval('Ask AI')}
+            onClick={handleAskAI}
             style={{
               background: '#e6f2fb',
               color: '#223',
