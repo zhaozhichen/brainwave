@@ -134,6 +134,32 @@ function App() {
     setOutput(aiResponse);
   };
 
+  // Readability
+  const handleReadability = async () => {
+    if (!transcript.trim()) {
+      setOutput("Please enter some text before assessing readability.");
+      return;
+    }
+    setOutput('Calculating readability...');
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const readabilityResponse = "Readability Score: Good";
+    setOutput(readabilityResponse);
+  };
+
+  // Correctness
+  const handleCorrectness = async () => {
+    if (!transcript.trim()) {
+      setOutput("Please enter some text before checking correctness.");
+      return;
+    }
+    setOutput('Checking correctness...');
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const correctnessResponse = "No correctness issues found.";
+    setOutput(correctnessResponse);
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -238,7 +264,7 @@ function App() {
         </div>
         <div style={{ display: 'flex', gap: 16, marginBottom: 18 }}>
           <button
-            onClick={() => handleEval('Readability')}
+            onClick={handleReadability}
             style={{
               background: '#e6f2fb',
               color: '#223',
@@ -252,7 +278,7 @@ function App() {
             }}
           >Readability</button>
           <button
-            onClick={() => handleEval('Correctness')}
+            onClick={handleCorrectness}
             style={{
               background: '#e6f2fb',
               color: '#223',
