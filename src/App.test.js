@@ -39,4 +39,68 @@ describe('App component', () => {
       });
     });
   });
+
+  describe('Correctness functionality', () => {
+    test('displays error message when transcript is empty', () => {
+      render(<App />);
+      const correctnessButton = screen.getByText('Correctness');
+      fireEvent.click(correctnessButton);
+      const textareas = screen.getAllByRole('textbox');
+      const outputTextarea = textareas[1];
+      expect(outputTextarea.value).toBe('Please enter some text before checking correctness.');
+    });
+
+    test('displays Correctness response when transcript is not empty', async () => {
+      render(<App />);
+      const correctnessButton = screen.getByText('Correctness');
+      const textareas = screen.getAllByRole('textbox');
+      const transcriptTextarea = textareas[0];
+      const outputTextarea = textareas[1];
+
+      // Simulate user typing into the transcript textarea
+      fireEvent.change(transcriptTextarea, { target: { value: 'This is a test transcript for correctness.' } });
+      
+      fireEvent.click(correctnessButton);
+
+      // Advance timers to resolve the promise in handleCorrectness
+      jest.advanceTimersByTime(1000);
+
+      // Wait for the output to update with the Correctness response
+      await waitFor(() => {
+        expect(outputTextarea.value).toBe('No correctness issues found.');
+      });
+    });
+  });
+
+  describe('Readability functionality', () => {
+    test('displays error message when transcript is empty', () => {
+      render(<App />);
+      const readabilityButton = screen.getByText('Readability');
+      fireEvent.click(readabilityButton);
+      const textareas = screen.getAllByRole('textbox');
+      const outputTextarea = textareas[1];
+      expect(outputTextarea.value).toBe('Please enter some text before assessing readability.');
+    });
+
+    test('displays Readability response when transcript is not empty', async () => {
+      render(<App />);
+      const readabilityButton = screen.getByText('Readability');
+      const textareas = screen.getAllByRole('textbox');
+      const transcriptTextarea = textareas[0];
+      const outputTextarea = textareas[1];
+
+      // Simulate user typing into the transcript textarea
+      fireEvent.change(transcriptTextarea, { target: { value: 'This is a test transcript for readability.' } });
+      
+      fireEvent.click(readabilityButton);
+
+      // Advance timers to resolve the promise in handleReadability
+      jest.advanceTimersByTime(1000);
+
+      // Wait for the output to update with the Readability response
+      await waitFor(() => {
+        expect(outputTextarea.value).toBe('Readability Score: Good');
+      });
+    });
+  });
 });
